@@ -264,105 +264,105 @@ Character-class that matches either a lower-case English character, `_` or
 `-`.
 
 
-===== Non-terminal =====
+##### Non-terminal
 `NT`
 
 References the non-terminal named `NT`.
 
 
-===== Parentheses =====
+##### Parentheses
 `(`'e'`)`
 
 Raises the precedence of the expression 'e'.
 
 
-///////////////////////////////////////////////////////////////////////////////
-===== Context Actions =====
+
+##### Context Actions
 `@action<a, b>`
 
 References the context-action `action` and gives the action the data held by
 the labels `a` and `b`. These are used for context-sensitive parsing. Not fully
 implemented yet.
-///////////////////////////////////////////////////////////////////////////////
 
 
-==== Prefix Expressions ====
 
-===== Void =====
+#### Prefix Expressions
+
+##### Void
 `:`'e'
 
 Doesn't include the result of 'e' when building the AST.
 
 
-===== Closure =====
+##### Closure
 `*`'e'
 
 Puts 'e' within a closure.
 
 
-===== Plus =====
+##### Plus
 `+`'e'
 
 Puts 'e' within a plus-closure.
 
 
-===== Optional =====
+##### Optional
 `?`'e'
 
 Puts 'e' within an optional.
 
 
-===== Negative Check =====
+##### Negative Check
 `!`'e'
 
 Checks that 'e' fails.
 
 
-===== Positive Check =====
+##### Positive Check
 `&`'e'
 
 Checks that 'e' succeeds.
 
 
-///////////////////////////////////////////////////////////////////////////////
-===== Labels =====
+
+##### Labels
 `a=`'e'
 
 Labels the expression 'e' with the label `a`. Not fully implemented yet.
-///////////////////////////////////////////////////////////////////////////////
 
 
-==== Sequence Expressions ====
+
+#### Sequence Expressions
 'e1 e2'
 
 Matches 'e1' and 'e2' in sequence.
 
 
-==== Alternation Expressions ====
+#### Alternation Expressions
 'e1'`|`'e2'
 
 Tries to match 'e1' and, if that fails, tries to match 'e2'.
 
 
-=== Precedence ===
+### Precedence
 
 In Waxeye grammars, some expressions can have other expressions nested within
 them. When we use parentheses, we are explicitly denoting the nesting structure
 of the expressions.
 
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 ((?A) B) | C
--------------------------------------------------------------------------------
+```
 
 At times, this can seem needlessly verbose. In many cases, we are able to omit
 the parentheses in favor of a shorter notation. We do this by exploiting the
 precedence of each expression type.
 
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 ?A B | C
--------------------------------------------------------------------------------
+```
 
 The precedence of an expression determines the priority it has when resolving
 implicitly nested expressions. Each expression type has a level of precedence
@@ -370,33 +370,33 @@ relative to all other types. There are four different precedence levels in
 Waxeye grammars.
 
 
-==== Level 4 ====
+#### Level 4
 
 The highest precedence is held by the atomic expressions. Because these
 expressions cannot, themselves, contain expressions, there is no need to
 consider which expressions are nested within them.
 
 
-==== Level 3 ====
+#### Level 3
 
 The prefix expressions hold the next precedence level. Their nesting is
 resolved directly after the atomic expressions.
 
 
-==== Level 2 ====
+#### Level 2
 
 Sequences of expressions are formed once the atomic and prefix expressions have
 been resolved.
 
 
-==== Level 1 ====
+#### Level 1
 
 Finally, once all other expressions have been resolved, the different choices of
 the alternation expression are resolved.
 
 
 
-=== Pruning Non-terminals ===
+### Pruning Non-terminals
 
 Sometimes, creating a new AST node will give us more information than we need.
 We might want to create a new AST node, only if doing so will tell us something
@@ -428,144 +428,144 @@ To help understand how this works, consider an example from a simple arithmetic
 grammar.
 
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 Product <- Number *([*/] Number)
 
 Number  <- +[0-9]
--------------------------------------------------------------------------------
+```
 
 If we use the 'Product' rule to parse the string `3*7`, we get a tree with
 'Product' at the root and, below that, a 'Number', a `*` character and then
 another 'Number'.
 
--------------------------------------------------------------------------------
+```
 Product
 ->  Number
     |   3
 |   *
 ->  Number
     |   7
--------------------------------------------------------------------------------
+```
 
 However, if the 'Product' rule parses a string with just one 'Number' in it, we
 will get a tree that is slightly bigger than we need. Parsing the string `5`
 produces the following tree. 
 
--------------------------------------------------------------------------------
+```
 Product
 ->  Number
     |   5
--------------------------------------------------------------------------------
+```
 
 In this case, having a 'Product' node at the root of the AST isn't necessary.
 If we want to, we can rewrite the original grammar to use a pruning
 non-terminal.
 
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 Product <= Number *([*/] Number)
 
 Number  <- +[0-9]
--------------------------------------------------------------------------------
+```
 
 Now, when we use 'Product' to parse `3*7`, we will get the same result as
 before but, when parsing `5`, we get an AST with 'Number' as the root.
 
--------------------------------------------------------------------------------
+```
 Number
 |   5
--------------------------------------------------------------------------------
+```
 
 
 As a second example, let's look at a grammar for nested parentheses.
 
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 A <- :'(' A :')' | B
 
 B <- 'b'
--------------------------------------------------------------------------------
+```
 
 Here are some example inputs and their resulting ASTs:
 
 Input: `b`
 
--------------------------------------------------------------------------------
+```
 A
 ->  B
     |   b
--------------------------------------------------------------------------------
+```
 
 Input: `(b)`
 
--------------------------------------------------------------------------------
+```
 A
 ->  A
     ->  B
         |   b
--------------------------------------------------------------------------------
+```
 
 Input: `(((b)))`
 
--------------------------------------------------------------------------------
+```
 A
 ->  A
     ->  A
         ->  A
             ->  B
                 |   b
--------------------------------------------------------------------------------
+```
 
 Unless we want to know the number of parentheses matched, trees like these
 contain more information than we need. Again, we are able to solve this by
 rewriting the grammar using a 'pruning' non-terminal.
 
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 A <= :'(' A :')' | B
 
 B <- 'b'
--------------------------------------------------------------------------------
+```
 
 This time, parsing the input `(((b)))` gives us a much shorter tree.
 
--------------------------------------------------------------------------------
+```
 B
 |   b
--------------------------------------------------------------------------------
+```
 
 
-=== Comments ===
+### Comments
 
 There are two types of comments in Waxeye grammars; single-line and multi-line.
 
-==== Single-line ====
+#### Single-line
 
 Single-line comments start at the first `#` outside of an atomic expression and
 extend until the end of the line.
 
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 # This is a single-line comment.
--------------------------------------------------------------------------------
+```
 
 
-==== Multi-line ====
+#### Multi-line
 
 Multi-line comments are opened at the first `/*` outside of an atomic
 expression and closed with a `*/`.
 
 
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 /* This is a multi-line comment. */
--------------------------------------------------------------------------------
+```
 
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 /* This is, also,
    a multi-line comment. */
--------------------------------------------------------------------------------
+```
 
 
 As an added convenience for when editing a grammar, multi-line comments can be
@@ -574,7 +574,7 @@ of the grammar that already contains a comment.
 
 
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 /*
 
 This is the outer comment.
@@ -587,12 +587,12 @@ A <- 'a'
 B <- 'b'
 
 */
--------------------------------------------------------------------------------
+```
 
 
 
 
-== Using Waxeye ==
+## Using Waxeye
 
 This chapter will show you how to setup Waxeye for your programming language.
 It covers language specific installation requirements and presents some basic
@@ -606,26 +606,26 @@ with extending and modifying the grammar.
 
 .grammars/num.waxeye
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 Num <- '0' | [1-9] *[0-9]
--------------------------------------------------------------------------------
+```
 
 Once setup and run, the boilerplate example will use the parser you generated
 to parse the string `42` and print the AST it creates.
 
--------------------------------------------------------------------------------
+```
 Num
 |   4
 |   2
--------------------------------------------------------------------------------
+```
 
 
 
-=== Using Waxeye from C ===
+### Using Waxeye from C
 
 Waxeye's C runtime is currently supported on unix platforms and MacOSX.
 
-==== Install ====
+#### Install
 
 To install the C runtime, you need to compile it and, optionally, install the
 header files and library in your system search paths.
@@ -633,34 +633,34 @@ header files and library in your system search paths.
 To compile the runtime, perform the command `make lib` from within the `src/c`
 directory of your waxeye installation.
 
--------------------------------------------------------------------------------
+```
 cd $WAXEYE_HOME/src/c
 make lib
 make clean
--------------------------------------------------------------------------------
+```
 
 To install the header files and library in your search paths, you could copy
 the files directly but, creating symbolic links to them will make upgrading
 easier.
 
--------------------------------------------------------------------------------
+```
 sudo ln -s $WAXEYE_HOME/lib/libwaxeye.a /usr/local/lib/
 sudo ln -s $WAXEYE_HOME/src/c/include/waxeye.h /usr/local/include/
 sudo ln -s $WAXEYE_HOME/src/c/include/waxeye /usr/local/include/
--------------------------------------------------------------------------------
+```
 
 
-==== Generate Parser ====
+#### Generate Parser
 
--------------------------------------------------------------------------------
+```
 waxeye -g c . num.waxeye
--------------------------------------------------------------------------------
+```
 
-==== Use Parser ====
+#### Use Parser
 
 .src/example/c/example.c
 [source,c]
--------------------------------------------------------------------------------
+```
 #include <string.h>
 #include "parser.h"
 
@@ -684,52 +684,52 @@ int main() {
 
     return 0;
 }
--------------------------------------------------------------------------------
+```
 
 
-==== Run ====
+#### Run
 
 If you installed the headers and library in your system path:
--------------------------------------------------------------------------------
+```
 gcc example.c parser.c -lwaxeye -o example
--------------------------------------------------------------------------------
+```
 
 Otherwise:
--------------------------------------------------------------------------------
+```
 FLAGS="-I $WAXEYE_HOME/src/c/include/ -L $WAXEYE_HOME/lib/"
 gcc $FLAGS example.c parser.c -lwaxeye -o example
--------------------------------------------------------------------------------
+```
 
 Finally,
--------------------------------------------------------------------------------
+```
 ./example
--------------------------------------------------------------------------------
+```
 
 
 
-=== Using Waxeye from Java ===
+### Using Waxeye from Java
 
 Waxeye's Java runtime is compatible with version 1.5 and 1.6 of the JRE. It
 should also be possible to use Waxeye with JRE versions 1.3 and 1.4 of by
 retrofitting the classes with http://retroweaver.sourceforge.net[Retroweaver]
 or http://retrotranslator.sourceforge.net[Retrotranslator].
 
-==== Install ====
+#### Install
 
 To use a Waxeye parser from Java, you need Waxeye's Java runtime in your
 classpath. The required classes are in the Jar file `lib/waxeye.jar`.
 
-==== Generate Parser ====
+#### Generate Parser
 
--------------------------------------------------------------------------------
+```
 waxeye -g java . num.waxeye
--------------------------------------------------------------------------------
+```
 
-==== Use Parser ====
+#### Use Parser
 
 .src/example/java/Example.java
 [source,java]
--------------------------------------------------------------------------------
+```
 import org.waxeye.parser.ParseResult;
 
 public class Example {
@@ -744,47 +744,47 @@ public class Example {
         System.out.println(result);
     }
 }
--------------------------------------------------------------------------------
+```
 
-==== Run ====
+#### Run
 
--------------------------------------------------------------------------------
+```
 javac -cp .:$WAXEYE_HOME/lib/waxeye.jar Example.java Parser.java Type.java
--------------------------------------------------------------------------------
+```
 
--------------------------------------------------------------------------------
+```
 java -cp .:$WAXEYE_HOME/lib/waxeye.jar Example
--------------------------------------------------------------------------------
+```
 
 
 
-=== Using Waxeye from Javascript ===
+### Using Waxeye from Javascript
 
 Waxeye parsers generated in Javascript should be able to run from any modern
 Javascript environment. The examples given here will use
 http://nodejs.org[Node.js].
 
-==== Install ====
+#### Install
 
 To install Waxeye's Javascript runtime library with Node.js, use the following
 commands on Unix and MacOS systems.
 
--------------------------------------------------------------------------------
+```
 mkdir -p ~/.node_libraries
 ln -s /usr/local/waxeye/src/javascript/waxeye.js ~/.node_libraries/
--------------------------------------------------------------------------------
+```
 
-==== Generate Parser ====
+#### Generate Parser
 
--------------------------------------------------------------------------------
+```
 waxeye -g javascript . num.waxeye
--------------------------------------------------------------------------------
+```
 
-==== Use Parser ====
+#### Use Parser
 
 .src/example/javascript/nodejs_example.js
 [source,javascript]
--------------------------------------------------------------------------------
+```
 var parser = require('./parser');
 
 // Create our parser
@@ -795,44 +795,44 @@ var ast = p.parse("42");
 
 // Print our AST
 console.log(ast.toString());
--------------------------------------------------------------------------------
+```
 
-==== Run ====
+#### Run
 
--------------------------------------------------------------------------------
+```
 node nodejs_example.js
--------------------------------------------------------------------------------
+```
 
 
 
-=== Using Waxeye from Python ===
+### Using Waxeye from Python
 
 Waxeye's Python runtime has been tested with Python version 2.5.1 and is
 intended to work with 2.x.x versions of Python.
 
-==== Install ====
+#### Install
 
 To install Waxeye's Python runtime, you need to run the `setup.py` script from
 the `src/python` directory.
 
--------------------------------------------------------------------------------
+```
 cd $WAXEYE_HOME/src/python
 python setup.py build
 sudo python setup.py install
 rm -rf build/
--------------------------------------------------------------------------------
+```
 
-==== Generate Parser ====
+#### Generate Parser
 
--------------------------------------------------------------------------------
+```
 waxeye -g python . num.waxeye
--------------------------------------------------------------------------------
+```
 
-==== Use Parser ====
+#### Use Parser
 
 .src/example/python/example.py
 [source,python]
--------------------------------------------------------------------------------
+```
 import parser
 
 # Create our parser
@@ -843,41 +843,41 @@ ast = p.parse("42")
 
 # Print our AST
 print ast
--------------------------------------------------------------------------------
+```
 
-==== Run ====
+#### Run
 
--------------------------------------------------------------------------------
+```
 python example.py
--------------------------------------------------------------------------------
+```
 
 
 
-=== Using Waxeye from Ruby ===
+### Using Waxeye from Ruby
 
 Waxeye's Ruby runtime is compatible with Ruby version 1.8.6.
 
 
-==== Install ====
+#### Install
 
 Install the Waxeye gem; either from Rubyforge or, from the gem file in `lib`.
 
--------------------------------------------------------------------------------
+```
 # Install the Waxeye gem from Rubyforge
 sudo gem install waxeye
--------------------------------------------------------------------------------
+```
 
-==== Generate Parser ====
+#### Generate Parser
 
--------------------------------------------------------------------------------
+```
 waxeye -g ruby . num.waxeye
--------------------------------------------------------------------------------
+```
 
-==== Use Parser ====
+#### Use Parser
 
 .src/example/ruby/example.rb
 [source,ruby]
--------------------------------------------------------------------------------
+```
 require './parser'
 
 # Create our parser
@@ -888,40 +888,38 @@ ast = p.parse("42")
 
 # Print our AST
 puts ast
--------------------------------------------------------------------------------
+```
 
-==== Run ====
+#### Run
 
--------------------------------------------------------------------------------
+```
 ruby example.rb
--------------------------------------------------------------------------------
+```
 
 
 
-=== Using Waxeye from Scheme ===
+### Using Waxeye from Scheme
 
 Waxeye's Scheme runtime is compatible with http://racket-lang.org/[Racket].
 
-==== Install ====
+#### Install
 
 Install the waxeye collection where Racket can find it.
 
--------------------------------------------------------------------------------
+```
 # Install the Waxeye collection; change to your install paths as needed
 sudo ln -s /usr/local/waxeye/src/scheme/waxeye /usr/local/racket/lib/racket/collects/
--------------------------------------------------------------------------------
+````` Generate Parser
 
-==== Generate Parser ====
-
--------------------------------------------------------------------------------
+```
 waxeye -g scheme . num.waxeye
--------------------------------------------------------------------------------
+```
 
-==== Use Parser ====
+#### Use Parser
 
 .src/example/scheme/example.scm
 [source,scheme]
--------------------------------------------------------------------------------
+```
 (module
 example
 mzscheme
@@ -934,17 +932,17 @@ mzscheme
   (display-ast ast))
 
 )
--------------------------------------------------------------------------------
+```
 
-==== Run from Racket ====
+#### Run from Racket
 
--------------------------------------------------------------------------------
+```
 racket -t example.scm
--------------------------------------------------------------------------------
+```
 
 
 
-== Using ASTs and Parse Errors ==
+## Using ASTs and Parse Errors
 
 Since just printing an Abstract Syntax Tree isn't very interesting, let's have
 a look at how to access the information the ASTs contain.
@@ -954,7 +952,7 @@ parser successfully parsed the input, the result will be an AST. If the input
 doesn't match the syntax of the language, the result will be a 'parse error'.
 
 
-=== ASTs ===
+### ASTs
 
 ASTs come in three different forms; 'tree', 'char' and 'empty'.
 
@@ -968,77 +966,77 @@ ASTs come in three different forms; 'tree', 'char' and 'empty'.
   empty AST.
 
 
-==== Using an AST node as string ====
+#### Using an AST node as string
 
 If a given AST node will only ever have 'char' children, you may wish to treat
 that node as a single string.
 
 
-===== From C =====
+##### From C
 
 [source,c]
--------------------------------------------------------------------------------
+```
 char *str = ast_children_as_string(ast);
 printf("%s\n", str);
 free(str);
--------------------------------------------------------------------------------
+```
 
 
-===== From Java =====
+##### From Java
 
 [source,java]
--------------------------------------------------------------------------------
+```
 System.out.println(ast.childrenAsString());
--------------------------------------------------------------------------------
+```
 
 
-===== From Javascript =====
+##### From Javascript
 
 [source,javascript]
--------------------------------------------------------------------------------
+```
 console.log(ast.children.join(''));
--------------------------------------------------------------------------------
+```
 
 
-===== From Python =====
+##### From Python
 
 [source,python]
--------------------------------------------------------------------------------
+```
 print ''.join(ast.children)
--------------------------------------------------------------------------------
+```
 
 
-===== From Ruby =====
+##### From Ruby
 
 [source,ruby]
--------------------------------------------------------------------------------
+```
 puts ast.children.join('')
--------------------------------------------------------------------------------
+```
 
 
-===== From Scheme =====
+##### From Scheme
 
 [source,scheme]
--------------------------------------------------------------------------------
+```
 (display (list->string (ast-c ast)))
 (newline)
--------------------------------------------------------------------------------
+```
 
 
 
-=== Parse Errors ===
+### Parse Errors
 
 A parse error contains information about where the input is invalid and hints
 about what is wrong with it.
 
 
 
-=== Determining the result type ===
+### Determining the result type
 
-==== From C ====
+#### From C
 
 [source,c]
--------------------------------------------------------------------------------
+```
 switch (result->type) {
   case AST_TREE:
     return "tree ast";
@@ -1047,13 +1045,13 @@ switch (result->type) {
   case AST_ERROR:
     return "error";
 }
--------------------------------------------------------------------------------
+```
 
 
-==== From Java ====
+#### From Java
 
 [source,java]
--------------------------------------------------------------------------------
+```
 ParseResult<Type> result = parser.parse(input);
 if (result.getAST() != null) {
     if (result instanceof IEmpty) {
@@ -1066,13 +1064,13 @@ if (result.getAST() != null) {
 else {
     return "error";
 }
--------------------------------------------------------------------------------
+```
 
 
-==== From Javascript ====
+#### From Javascript
 
 [source,javascript]
--------------------------------------------------------------------------------
+```
 if (result instanceof waxeye.AST) {
     return "tree ast";
 }
@@ -1084,26 +1082,26 @@ else {
         return "empty ast";
     }
 }
--------------------------------------------------------------------------------
+```
 
 
-==== From Python ====
+#### From Python
 
 [source,python]
--------------------------------------------------------------------------------
+```
 if isinstance(result, waxeye.AST):
     return "tree ast"
 elif isinstance(result, waxeye.ParseError):
     return "error"
 else:
     return "empty ast"
--------------------------------------------------------------------------------
+```
 
 
-==== From Ruby ====
+#### From Ruby
 
 [source,ruby]
--------------------------------------------------------------------------------
+```
 case result.class
   when Waxeye::AST
     "tree ast"
@@ -1112,23 +1110,23 @@ case result.class
   else
     "empty ast"
 end
--------------------------------------------------------------------------------
+```
 
 
-==== From Scheme ====
+#### From Scheme
 
 [source,scheme]
--------------------------------------------------------------------------------
+```
 (cond
   ((ast? result) "tree ast")
   ((parse-error? result) "error")
   (else "empty ast"))
--------------------------------------------------------------------------------
+```
 
 
 
 
-== Example: A Calculator ==
+## Example: A Calculator
 
 Now that we know how to write grammars, generate parsers and manipulate AST, we
 can put these skills together to build a small language interpreter. In this
@@ -1145,7 +1143,7 @@ computes the result. The arithmetic language supports the following constructs.
 
 .grammars/calc.waxeye
 [source,waxeye]
--------------------------------------------------------------------------------
+```
 calc  <- ws sum
 
 sum   <- prod *([+-] ws prod)
@@ -1159,14 +1157,14 @@ unary <= '-' ws unary
 num   <- +[0-9] ?('.' +[0-9]) ws
 
 ws    <: *[ \t\n\r]
--------------------------------------------------------------------------------
+```
 
 
-=== Calculator in C ===
+### Calculator in C
 
 .src/example/c/calculator.c
 [source,c]
--------------------------------------------------------------------------------
+```
 #include <stdio.h>
 #include "parser.h"
 
@@ -1286,14 +1284,14 @@ int main() {
 
     return 0;
 }
--------------------------------------------------------------------------------
+```
 
 
-=== Calculator in Java ===
+### Calculator in Java
 
 .src/example/java/Calculator.java
 [source,java]
--------------------------------------------------------------------------------
+```
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -1395,14 +1393,14 @@ public final class Calculator {
         }
     }
 }
--------------------------------------------------------------------------------
+```
 
 
-=== Calculator in Javascript ===
+### Calculator in Javascript
 
 .src/example/javascript/nodejs_calculator.js
 [source,javascript]
--------------------------------------------------------------------------------
+```
 var util = require('util');
 var waxeye = require('waxeye');
 var parser = require('./parser');
@@ -1488,14 +1486,14 @@ stdin.on('data', function (line) {
 stdin.on('end', function () {
     util.print('\n');
 });
--------------------------------------------------------------------------------
+```
 
 
-=== Calculator in Python ===
+### Calculator in Python
 
 .src/example/python/calculator.py
 [source,python]
--------------------------------------------------------------------------------
+```
 import sys
 import waxeye
 import parser
@@ -1553,14 +1551,14 @@ while line:
     sys.stdout.write('calc> ')
     line = sys.stdin.readline()
 print
--------------------------------------------------------------------------------
+```
 
 
-=== Calculator in Ruby ===
+### Calculator in Ruby
 
 .src/example/ruby/calculator.rb
 [source,ruby]
--------------------------------------------------------------------------------
+```
 require 'rubygems'
 require 'waxeye'
 require './parser'
@@ -1619,14 +1617,14 @@ end
 print 'calc> '
 STDIN.each {|input| puts Calculator.calc(input); print 'calc> ' }
 puts
--------------------------------------------------------------------------------
+```
 
 
-=== Calculator in Scheme ===
+### Calculator in Scheme
 
 .src/example/scheme/calculator.scm
 [source,scheme]
--------------------------------------------------------------------------------
+```
 (module
 calculator
 mzscheme
@@ -1686,33 +1684,33 @@ mzscheme
              (loop (rl)))))
 
 )
--------------------------------------------------------------------------------
+```
 
 
 
 
-///////////////////////////////////////////////////////////////////////////////
-== A Short Example ==
+
+## A Short Example
 
 This chapter will introduce you to the basic work-flow used with Waxeye. In the
 process, we will iteratively develop the grammar of a simple real-world
 language.
 
 
-== Using the Interpreter ==
+## Using the Interpreter
 todo
 
-== Extended Example ==
+## Extended Example
 todo
-///////////////////////////////////////////////////////////////////////////////
 
 
 
-== Grammar Testing ==
+
+## Grammar Testing
 
 .test/grammars/waxeye.scm
 [source,scheme]
--------------------------------------------------------------------------------
+```
 ;; These are tests for the 'Grammar' non-terminal
 (Grammar ; <- This is the non-terminal's name
 
@@ -1746,11 +1744,11 @@ todo
  (Grammar (Definition (Identifier #\A)
             (LeftArrow) (Alternation (Sequence (Unit (Literal (LChar #\a)))))))
  )
--------------------------------------------------------------------------------
+```
 
 
 
-== Modular Grammars ==
+## Modular Grammars
 
 It is sometimes desirable to have a grammar split across multiple files and to
 have a final grammar built from those files. We can do this by using a
@@ -1773,7 +1771,7 @@ want to have parsers for each version of the language but without duplicating
 large parts of our grammars.
 
 
-=== Grammar Composition ===
+### Grammar Composition
 
 A modular grammar is made up of expressions that pull together non-modular
 grammars. Some modular expressions can have other expressions nested within
@@ -1808,20 +1806,20 @@ them. An expression is one of the following:
 
 .grammars/modular/mod.scm
 [source,scheme]
--------------------------------------------------------------------------------
+```
 ;; A contrived example where we replace the definition of Number in Json with a
 ;; much simpler one that only supports integers.
 
 (all-except "../json.waxeye" Number)
 
 (rename (only "../num.waxeye" Num) (Num . Number))
--------------------------------------------------------------------------------
+```
 
 
 
-== Waxeye Options ==
+## Waxeye Options
 
--------------------------------------------------------------------------------
+```
 waxeye [ <option> ... ] <grammar>
  where <option> is one of
  Waxeye modes:
@@ -1844,23 +1842,23 @@ waxeye [ <option> ... ] <grammar>
  /|\ Brackets indicate mutually exclusive options.
  Multiple single-letter switches can be combined after one `-'; for
   example: `-h-' is the same as `-h --'
--------------------------------------------------------------------------------
+```
 
-=== Waxeye Modes ===
+### Waxeye Modes
 
--------------------------------------------------------------------------------
+```
 grammar
--------------------------------------------------------------------------------
+```
 
 The grammar file describing the language you want to parse. It is the last
 argument given to Waxeye and is required by all of Waxeye's operating modes.
 
 
-==== Generate ====
+#### Generate
 
--------------------------------------------------------------------------------
+```
 -g <language> <dir>
--------------------------------------------------------------------------------
+```
 
 Creates a parser written in the specified programming language. Writes the
 parser's files to the specified directory.
@@ -1874,115 +1872,115 @@ Currently supported programming languages:
 * ruby
 * scheme
 
--------------------------------------------------------------------------------
+```
 waxeye -g scheme . grammar.waxeye
--------------------------------------------------------------------------------
+```
 
 
-==== Interpret ====
+#### Interpret
 
--------------------------------------------------------------------------------
+```
 -i
--------------------------------------------------------------------------------
+```
 
 Parses input as a string from the language defined by the grammar. Displays the
 resulting AST or parse error.
 
--------------------------------------------------------------------------------
+```
 waxeye -i grammar.waxeye < input.txt
--------------------------------------------------------------------------------
+```
 
 
-==== Test ====
+#### Test
 
--------------------------------------------------------------------------------
+```
 -t <test>
--------------------------------------------------------------------------------
+```
 
 Runs the tests in the specified test file for the language defined by the
 grammar. Displays any test errors.
 
--------------------------------------------------------------------------------
+```
 waxeye -t tests.scm grammar.waxeye
--------------------------------------------------------------------------------
+```
 
 
-=== Grammar Options ===
+### Grammar Options
 
--------------------------------------------------------------------------------
+```
 -m
--------------------------------------------------------------------------------
+```
 
 Indicates that the grammar is a modular grammar.
 
--------------------------------------------------------------------------------
+```
 -s <start>
--------------------------------------------------------------------------------
+```
 
 Specifies the non-terminal that starts the language. Default - The first
 non-terminal in the grammar.
 
 
-=== Parser Options ===
+### Parser Options
 
--------------------------------------------------------------------------------
+```
 -c <comment>
--------------------------------------------------------------------------------
+```
 
 The file to be used as the header comment of generated files. Default - none.
 
 
--------------------------------------------------------------------------------
+```
 -e <eof>
--------------------------------------------------------------------------------
+```
 
 Whether to check that the parser consumes all input. Default - true.
 
 
--------------------------------------------------------------------------------
+```
 -n <namespace>
--------------------------------------------------------------------------------
+```
 
 The module or package namespace. Default - none.
 
 
--------------------------------------------------------------------------------
+```
 -p <prefix>
--------------------------------------------------------------------------------
+```
 
 The name prefix for any generated files. Default - none.
 
 
-=== Misc Options ===
+### Misc Options
 
--------------------------------------------------------------------------------
+```
 --debug
--------------------------------------------------------------------------------
+```
 
 Activates debug information.
 
 
--------------------------------------------------------------------------------
+```
 --version
--------------------------------------------------------------------------------
+```
 
 Prints the version number and copyright notice.
 
 
--------------------------------------------------------------------------------
+```
 --help, -h
--------------------------------------------------------------------------------
+```
 
 Prints a message describing the available command-line options.
 
 
-///////////////////////////////////////////////////////////////////////////////
-== Grammar Cookbook ==
+
+## Grammar Cookbook
 
 This chapter gives you recipes for some of the common situations faced when
 writing grammars.
 
-=== Removing Implicit Information ===
+### Removing Implicit Information
 
 e.g.
 
@@ -1992,60 +1990,60 @@ Change to:
 Assignment <- Variable :'=' Expression
 
 
-=== Whitespace ===
+### Whitespace
 
 TODO
 
-=== Comments ===
+### Comments
 
 * Single-line comments
 * Multi-line comments
 * Nested comments
 
-=== End of Line Encoding ===
+### End of Line Encoding
 
 TODO
 
-=== Quoted Strings ===
+### Quoted Strings
 
 TODO
 
-=== Delimited Lists ===
+### Delimited Lists
 
 TODO
 
-=== Optionally Delimited Expressions ===
+### Optionally Delimited Expressions
 
 TODO
 
-=== Escape Sequences ===
+### Escape Sequences
 
 TODO
 
-=== Nested Expressions ===
+### Nested Expressions
 
 TODO
 
-=== Arithmetic Expressions ===
+### Arithmetic Expressions
 
 TODO
 
-=== Case Insensitive Keywords ===
+### Case Insensitive Keywords
 
 TODO
 
-=== Keywords as Identifiers ===
+### Keywords as Identifiers
 
 TODO
 
-=== Embedded Languages ===
+### Embedded Languages
 
 TODO
-///////////////////////////////////////////////////////////////////////////////
 
 
 
-== GNU Free Documentation License ==
+
+## GNU Free Documentation License
 
 ...............................................................................
                 GNU Free Documentation License
