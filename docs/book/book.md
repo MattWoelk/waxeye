@@ -1,5 +1,5 @@
-Language Development with Waxeye
-================================
+# Language Development with Waxeye
+
 Orlando Hill
 v0.8.1, January 2014
 
@@ -16,7 +16,7 @@ in the section entitled "GNU Free Documentation License".
 
 
 
-== Introduction ==
+## Introduction
 
 As programmers, we are required to make use of data that is presented in a
 variety of formats. In order to extract and manipulate the desired information,
@@ -31,9 +31,10 @@ parser. This is where Waxeye comes in handy.
 
 
 
-== Getting Started ==
+## Getting Started
 
-=== Downloading ===
+
+### Downloading
 
 You can download the current official release of Waxeye from
 http://sourceforge.net/projects/waxeye[Sourceforge]. If you want to get the
@@ -42,7 +43,7 @@ https://github.com/orlandohill/waxeye[GitHub] using the
 http://git-scm.com/[Git] version control system.
 
 
-=== Requirements ===
+### Requirements
 
 There are no external dependencies needed to run a pre-built version of Waxeye.
 If you build from source, you'll need http://racket-lang.org[Racket].
@@ -51,9 +52,10 @@ To use a generated parser, you need a supported programming language to run it
 from.
 
 
-=== Installation ===
+### Installation
 
-==== Unix and MacOSX ====
+#### Unix and MacOSX
+
 1. Extract the files of the distribution.
 
 2. Copy the 'waxeye' directory to where you wish to install it.
@@ -62,36 +64,34 @@ from.
    your PATH and installed waxeye to '/usr/local/waxeye' then you might do the
    following.
 
--------------------------------------------------------------------------------
-ln -s /usr/local/waxeye/bin/waxeye ~/bin/
--------------------------------------------------------------------------------
+`ln -s /usr/local/waxeye/bin/waxeye ~/bin/`
 
-==== Windows ====
+#### Windows
 
 1. Extract the files of the distribution.
 
 2. Copy the 'waxeye' directory to where you wish to install it.
 
 
-=== Running ===
+### Running
 
 Currently, Waxeye is used from a command-line interface. You can use it as a
 command-line tool or, as part of a script or build-system. There are plans to
 develop a graphical tool at a later stage.
 
-==== Unix and MacOSX ====
+#### Unix and MacOSX
 
 Run Waxeye by executing the `waxeye` binary.
 
-==== Windows ====
+#### Windows
 
 Use a command prompt to run `waxeye.exe`.
 
 
 
-== Basic Concepts ==
+## Basic Concepts
 
-=== What is a parser? ===
+### What is a parser?
 
 When we want to understand data that has been written in a language of interest
 ('L'), we need to break our data into units of the language. This process of
@@ -99,7 +99,7 @@ breaking our input into different parts, based on the structure of 'L', is
 called 'parsing'. A program used for parsing is called a 'parser'.
 
 
-=== What is the result of a parser? ===
+### What is the result of a parser?
 
 Once your input has been parsed, you need the result to be presented in a from
 that is easy to understand and manipulate. Since the input was organized based
@@ -112,7 +112,7 @@ automatically give you an AST that represents your input. The structure of this
 AST is based on the structure of your language's grammar.
 
 
-=== What is a parser generator? ===
+### What is a parser generator?
 
 If 'L' is simple, it is easy for us to use our programming lanugage of choice
 to, manually, write a parser for 'L'. However, as the structural complexity of
@@ -128,9 +128,11 @@ for you and gives you a transformed program as output. Each tool accepts input
 in one language ('L1'), performs various transformations and creates output in
 another language ('L2').
 
+```
  L1 --> Compiler         --> L2
  L1 --> Assembler        --> L2
  L1 --> Parser Generator --> L2
+```
 
 The key difference between the three tools is the level of abstraction held by
 the input and output languages. The assembler works at the lowest level by
@@ -141,7 +143,7 @@ highest level of abstraction and transforms a 'grammar file' into programming
 language source code for a compiler to process.
 
 
-=== What is a grammar file? ===
+### What is a grammar file?
 
 We can define a language as the set of strings it contains. While it is
 sometimes possible to specify a language simply by enumerating all of its
@@ -153,9 +155,9 @@ Suppose we need to read time information as part of a larger program. In a
 trivial case, the time information may be presented as two digits for the
 hours, a colon `:`, and then two digits for the minutes.
 
--------------------------------------------------------------------------------
+```
 00:00, 00:01, 00:02, ... 14:23, 14:24, 14:25, ... 23:57, 23:58, 23:59
--------------------------------------------------------------------------------
+```
 
 We could describe our time language this way but, writing all 1,440 possible
 hour/minute combinations wouldn't be much fun. Not to mention how bad things
@@ -164,9 +166,9 @@ would be if we extended our language to include date information.
 As another example, consider the language that consists of all strings of one
 or more alphabet character.
 
--------------------------------------------------------------------------------
+```
 a, b, c, ... z, aa, ab, ac, ... az, aaa, aab, aac, ...
--------------------------------------------------------------------------------
+```
 
 Even worse than our time example, this language is infinite. It would be
 impossible for us to explicitly list every string in the language.
@@ -177,7 +179,7 @@ that contains it a 'grammar file'.
 
 
 
-== Waxeye Grammars ==
+## Waxeye Grammars
 
 To generate a parser for a language, you must supply the parser generator with
 a grammar file that describes the language. Waxeye grammar files are written as
@@ -189,7 +191,7 @@ default, the first non-terminal is considered the starting point of the
 language definition.
 
 
-=== Non-terminals ===
+### Non-terminals
 
 Non-terminals are defined in three parts; a name, a rule type and one or more
 grammar expressions.
@@ -197,36 +199,36 @@ grammar expressions.
 The most common non-terminal type is the tree constructing non-terminal. A tree
 constructing non-terminal has the following form:
 
-*******************************************************************************
+```
 'Name' `<-` '+expressions'
-*******************************************************************************
+```
 
 Where 'Name' matches `[a-zA-Z_] *[a-zA-Z0-9_-]`.
 
 [source,waxeye]
 .A tree constructing non-terminal
--------------------------------------------------------------------------------
+```
 Example <- A | B
--------------------------------------------------------------------------------
+```
 
 
 The other common non-terminal type is the void non-terminal. The result of a
 void non-terminal is not included in the AST that is constructed by the parser.
 To define a void non-terminal, use this form:
 
-*******************************************************************************
+```
 'Name' `<:` '+expressions'
-*******************************************************************************
+```
 
 [source,waxeye]
 .A void non-terminal
--------------------------------------------------------------------------------
+```
 Example <: A | B
--------------------------------------------------------------------------------
+```
 
 
 
-=== Expressions ===
+### Expressions
 
 The most important part of each non-terminal definition is the set of
 expressions it contains. Grammar expressions come in different forms and have
@@ -234,28 +236,28 @@ their own meanings. Places where an expression can be contained within another
 expression are denoted with an 'e'.
 
 
-==== Atomic Expressions ====
+#### Atomic Expressions
 
-===== Wildcard =====
+##### Wildcard
 `.`
 
 Matches any character from the input.
 
 
-===== Literal =====
+##### Literal
 `'text'`
 
 Matches `text` in the input.
 
 
-===== Case-insensitive Literal =====
+##### Case-insensitive Literal
 `"text"`
 
 Matches `text` in the input while ignores case. This is equivalent to the
 expression `[tT][eE][xX][tT]` but, is much more readable.
 
 
-===== Character Class =====
+##### Character Class
 `[a-z_-]`
 
 Character-class that matches either a lower-case English character, `_` or
