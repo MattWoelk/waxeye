@@ -909,7 +909,7 @@ Install the waxeye collection where Racket can find it.
 ```
 # Install the Waxeye collection; change to your install paths as needed
 sudo ln -s /usr/local/waxeye/src/scheme/waxeye /usr/local/racket/lib/racket/collects/
-````` Generate Parser
+```
 
 ```
 waxeye -g scheme . num.waxeye
